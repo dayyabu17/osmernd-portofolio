@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 
 /* ── Lazy-load heavy WebGL background (client-only) ── */
-const PrismBackground = dynamic(() => import("./PrismBackground"), {
+const GradientBackground = dynamic(() => import("./GradientBackground"), {
   ssr: false,
 });
 
@@ -203,9 +203,9 @@ export default function Hero() {
         </defs>
       </svg>
 
-      {/* ── Prism Background ── */}
+      {/* ── Gradient Background ── */}
       <div className="prism-bg">
-        <PrismBackground
+        <GradientBackground
           animationType="hover"
           height={3.2}
           baseWidth={5.2}
@@ -222,7 +222,7 @@ export default function Hero() {
 
       {/* ── Navbar ── */}
       <nav className="navbar" id="navbar">
-        <div className="navbar__brand">OSMEERN D</div>
+        <div className="navbar__brand">Osmern D</div>
         <ul className="navbar__links">
           <li>
             <a className="navbar__link" href="#projects" id="nav-projects">

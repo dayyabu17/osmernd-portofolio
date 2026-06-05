@@ -150,19 +150,31 @@ const GradientBackground: React.FC<GradientProps> = ({
         float g1 = 0.5 + 0.5 * sin((p.x + p.y) * uColorFreq + t * 0.25);
         float g2 = 0.5 + 0.5 * sin((p.x * 1.4 - p.y * 0.6) * (uColorFreq * 0.85) - t * 0.2);
 
+        vec3 c0 = vec3(0.0);
         vec3 c1 = vec3(0.05, 0.26, 0.5);
         vec3 c2 = vec3(0.72, 0.52, 0.9);
         vec3 c3 = vec3(0.1, 0.7, 0.75);
         vec3 col = mix(c1, c2, g1);
         col = mix(col, c3, g2 * 0.65);
 
+        vec2 b1 = vec2(0.6 * cos(t * 0.25), 0.6 * sin(t * 0.22));
+        vec2 b2 = vec2(0.45 * cos(t * 0.31 + 1.7), 0.55 * sin(t * 0.27 + 0.8));
+        vec2 b3 = vec2(0.5 * cos(t * 0.19 - 1.1), 0.4 * sin(t * 0.21 - 0.4));
+        float f1 = 0.18 / (length(uv + drift * 0.7 - b1) + 0.18);
+        float f2 = 0.15 / (length(uv + drift * 0.8 - b2) + 0.2);
+        float f3 = 0.16 / (length(uv + drift * 0.6 - b3) + 0.2);
+        float goo = clamp(f1 + f2 + f3, 0.0, 1.8);
+        float blackMix = smoothstep(0.35, 1.1, goo);
+
         float vignette = smoothstep(1.4, 0.2, length(uv));
-        col *= mix(0.85, 1.2, vignette);
-        col *= (0.55 + 0.45 * uGlow) * (0.7 + 0.3 * uBloom);
+        vec3 colored = col * mix(0.85, 1.2, vignette);
+        colored *= (0.55 + 0.45 * uGlow) * (0.7 + 0.3 * uBloom);
 
         float n = rand(gl_FragCoord.xy + vec2(iTime));
-        col += (n - 0.5) * uNoise;
-        col = clamp(col, 0.0, 1.0);
+        colored += (n - 0.5) * (uNoise * 0.6);
+        colored = clamp(colored, 0.0, 1.0);
+
+        col = mix(c0, colored, blackMix);
 
         float L = dot(col, vec3(0.2126, 0.7152, 0.0722));
         col = clamp(mix(vec3(L), col, uSaturation), 0.0, 1.0);
@@ -197,7 +209,7 @@ const GradientBackground: React.FC<GradientProps> = ({
         uTimeScale: { value: TS },
         uDriftStrength: { value: driftStrength },
         uPointer: { value: pointerBuf },
-        uUsePointer: { value: animationType === "hover" ? 1 : 0 },
+        uUsePointer: { value: 0 },
         uHoverStrength: { value: HOVSTR },
       },
     });
