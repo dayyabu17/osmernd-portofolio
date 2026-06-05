@@ -6,53 +6,62 @@ import { Text, MeshTransmissionMaterial, Environment } from "@react-three/drei";
 import * as THREE from "three";
 
 function LensMesh({ isHovered }: { isHovered: boolean }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const { pointer, viewport, size } = useThree();
   const targetPos = new THREE.Vector3();
   const currentScale = useRef(1);
 
   useFrame(() => {
-    if (meshRef.current) {
-      // 1. Smooth position tracking
+    if (groupRef.current) {
       targetPos.set(
         (pointer.x * viewport.width) / 2,
         (pointer.y * viewport.height) / 2,
         1.5
       );
-      meshRef.current.position.lerp(targetPos, 0.15);
+      groupRef.current.position.lerp(targetPos, 0.15);
 
-      // 2. Smooth scale (radius) tracking
       const targetRadiusPx = isHovered ? 100 : 50;
       const targetRadius3D = (targetRadiusPx / size.width) * viewport.width;
 
       currentScale.current += (targetRadius3D - currentScale.current) * 0.12;
-      
-      // Apply uniform scale (Z is flattened by the parent group)
-      meshRef.current.scale.setScalar(currentScale.current);
+      groupRef.current.scale.setScalar(currentScale.current);
     }
   });
 
   return (
-    <mesh ref={meshRef}>
-      {/* Base geometry radius of 1 so the scale exactly matches the target radius */}
-      <sphereGeometry args={[1, 64, 64]} />
-      <MeshTransmissionMaterial
-        transmission={1}
-        thickness={1.2}
-        roughness={0}
-        ior={1.4}
-        chromaticAberration={0.06}
-        clearcoat={1}
-        backside
-      />
-    </mesh>
+    <group ref={groupRef}>
+      {/* 3D Glass Sphere (Flattened by parent group) */}
+      <mesh>
+        <sphereGeometry args={[1, 64, 64]} />
+        <MeshTransmissionMaterial
+          transmission={1} // 100% glass, no milky solid color
+          thickness={1.5}  // Thickness drives the refraction amount
+          roughness={0.18} // High roughness for the strong blur seen in the image
+          ior={1.2}        // Low IOR to prevent extreme edge warping
+          chromaticAberration={0.15} // High RGB splitting
+          clearcoat={0}    // No shiny 3D bubble glare
+          envMapIntensity={0} // No surface reflections, pure 2D cutout look
+          backside
+        />
+      </mesh>
+
+      {/* Crisp, thin 2D White Border */}
+      <mesh position={[0, 0, 0]}>
+        <ringGeometry args={[0.985, 1.0, 64]} />
+        <meshBasicMaterial 
+          color="#ffffff" 
+          transparent 
+          opacity={0.35} 
+          depthTest={false} 
+        />
+      </mesh>
+    </group>
   );
 }
 
 function SceneText({ setHovered }: { setHovered: (v: boolean) => void }) {
   const { viewport } = useThree();
 
-  // Responsive font sizing
   const responsiveFontSize = Math.min(viewport.width * 0.16, 4.5);
   const lineSpacing = responsiveFontSize * 0.9;
   
@@ -78,7 +87,7 @@ function SceneText({ setHovered }: { setHovered: (v: boolean) => void }) {
       <Text
         fontSize={responsiveFontSize}
         position={[0, 0, 0]}
-        color="#fb923c" // Tailwind orange-400
+        color="#fb923c"
         anchorX="center"
         anchorY="middle"
         letterSpacing={-0.02}
@@ -104,7 +113,6 @@ export default function GlassLensScene() {
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    // Attach R3F events to the document body so pointer tracking works globally
     setEventSource(document.body);
   }, []);
 
@@ -120,13 +128,14 @@ export default function GlassLensScene() {
           <ambientLight intensity={0.5} />
           <directionalLight position={[10, 10, 5]} intensity={1.5} />
           <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-          
-          {/* City environment preset gives excellent reflections for glass */}
+
+          {/* The environment provides the light/colors that the glass refracts. 
+              Without this, the glass refracts the empty transparent canvas (which is black). */}
           <Environment preset="city" />
           
           <SceneText setHovered={setIsHovered} />
-          <group scale={[1, 1, 0.3]}>
-            {/* We scale the Z axis down to flatten the sphere into a thin lens shape */}
+          <group scale={[1, 1, 0.25]}>
+            {/* The Z scale flattens the sphere so it acts like a subtle magnifying glass instead of a warping marble */}
             <LensMesh isHovered={isHovered} />
           </group>
         </Suspense>
