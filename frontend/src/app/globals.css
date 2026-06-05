@@ -20,9 +20,12 @@
   --page-padding: 56px;
 
   /* Cursor lens */
-  --lens-size: 200px;
+  --lens-size: 100px;
+  --lens-size-expanded: 200px;
   --lens-blur: 12px;
   --lens-border: rgba(255, 255, 255, 0.18);
+  --lens-glow-cool: rgba(120, 180, 255, 0.45);
+  --lens-glow-warm: rgba(255, 170, 70, 0.3);
 }
 
 @theme inline {
@@ -64,12 +67,62 @@ body {
   border: 1px solid var(--lens-border);
   backdrop-filter: blur(var(--lens-blur)) saturate(1.2);
   -webkit-backdrop-filter: blur(var(--lens-blur)) saturate(1.2);
+  background: radial-gradient(
+      120% 120% at 25% 20%,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.06) 35%,
+      rgba(0, 0, 0, 0.12) 70%
+    );
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 18px rgba(255, 255, 255, 0.08),
+    inset 0 0 2px rgba(255, 255, 255, 0.35);
   pointer-events: none;
   z-index: 50;
   transform: translate(-50%, -50%);
-  transition: opacity 0.3s ease;
-  will-change: left, top;
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+  will-change: left, top, width, height;
   mix-blend-mode: normal;
+  overflow: hidden; /* Clips inner content to the circular lens */
+  --lens-zoom: 1.06;
+  --lens-focus-blur: 0.35px;
+}
+
+.cursor-lens::before,
+.cursor-lens::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cursor-lens::before {
+  background: radial-gradient(
+      70% 70% at 30% 25%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.18) 28%,
+      rgba(255, 255, 255, 0.0) 60%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+
+.cursor-lens::after {
+  box-shadow:
+    0 0 12px var(--lens-glow-cool),
+    0 0 22px var(--lens-glow-warm);
+  opacity: 0.55;
+}
+
+.cursor-lens--expanded {
+  width: var(--lens-size-expanded);
+  height: var(--lens-size-expanded);
+  --lens-zoom: 1.13;
+  --lens-focus-blur: 0.8px;
 }
 
 .cursor-lens--hidden {
@@ -77,16 +130,19 @@ body {
 }
 
 /* ───────────────────────────────────────────
-   ASCII Overlay Layer
+   Lens Inner Content
    ─────────────────────────────────────────── */
-.ascii-overlay {
+.lens-content {
   position: absolute;
-  inset: 0;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
-  z-index: 20;
-  /* Circular clip centered on cursor, updated via JS inline style */
-  clip-path: circle(0px at 0px 0px);
-  transition: clip-path 0.05s linear;
+  /* Origin and position are updated via JS in Hero.tsx */
+  filter:
+    url(#hero-chromatic)
+    blur(var(--lens-focus-blur))
+    saturate(1.2);
+  transform: scale(var(--lens-zoom));
 }
 
 /* ───────────────────────────────────────────
@@ -159,6 +215,7 @@ body {
 
 .hero-headline__line {
   display: block;
+  position: relative;
   font-family: var(--font-primary);
   font-size: clamp(80px, 12vw, 180px);
   font-weight: 400;
@@ -168,7 +225,7 @@ body {
 }
 
 .hero-headline__line--designer {
-  margin-left: clamp(100px, 20vw, 360px);
+  margin-left: clamp(220px, 26vw, 520px);
 }
 
 /* Accent word "visual" */
@@ -182,6 +239,8 @@ body {
 }
 
 .hero-accent__word {
+  position: relative;
+  display: inline-block;
   font-family: var(--font-accent);
   font-style: italic;
   font-size: clamp(70px, 10vw, 150px);

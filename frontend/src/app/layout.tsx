@@ -13,7 +13,7 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "OSMEERN D — Creative Visual Designer",
   description:
-    "Portfolio of OSMEERN D — a creative visual designer specializing in web & mobile, UX/UI, and branding. Based in London, available for freelance worldwide.",
+    "Portfolio of OSMEERN D — a creative visual designer specializing in web & mobile, UX/UI, and branding. Based in Nigeria, available for freelance worldwide.",
 };
 
 export default function RootLayout({
