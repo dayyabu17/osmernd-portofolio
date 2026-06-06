@@ -11,16 +11,39 @@ interface TubesBackgroundProps {
   children?: React.ReactNode;
   className?: string;
   enableClickInteraction?: boolean;
+  isActive?: boolean;
 }
 
 export function TubesBackground({ 
   children, 
   className,
-  enableClickInteraction = true 
+  enableClickInteraction = true,
+  isActive = true
 }: TubesBackgroundProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tubesRef = useRef<any>(null);
+
+  // Handle active/inactive state to pause renderer without unmounting
+  useEffect(() => {
+    if (!tubesRef.current) return;
+    if (isActive) {
+      if (typeof tubesRef.current.resume === 'function') tubesRef.current.resume();
+      // Delay restoring colors so the 'catch up' trail is drawn invisibly in black
+      setTimeout(() => {
+        if (tubesRef.current && tubesRef.current.tubes) {
+          tubesRef.current.tubes.setColors(["#f967fb", "#53bc28", "#6958d5"]);
+        }
+      }, 100);
+    } else {
+      // Set colors to black. Under 'screen' blend mode, black is 100% transparent.
+      // This makes any trails tracked during the pause completely invisible.
+      if (tubesRef.current && tubesRef.current.tubes) {
+        tubesRef.current.tubes.setColors(["#000000", "#000000", "#000000"]);
+      }
+      if (typeof tubesRef.current.pause === 'function') tubesRef.current.pause();
+    }
+  }, [isActive]);
 
   useEffect(() => {
     // Respect user motion preferences
@@ -54,7 +77,7 @@ export function TubesBackground({
         // Pause rendering when tab is hidden
         const handleVisibilityChange = () => {
           if (!tubesRef.current) return;
-          if (document.hidden) {
+          if (document.hidden || !isActive) {
             if (typeof tubesRef.current.pause === 'function') tubesRef.current.pause();
           } else {
             if (typeof tubesRef.current.resume === 'function') tubesRef.current.resume();
@@ -88,7 +111,7 @@ export function TubesBackground({
           if (entry.isIntersecting) {
             if (!tubesRef.current) {
               initTubes();
-            } else if (tubesRef.current.resume) {
+            } else if (tubesRef.current.resume && isActive) {
               tubesRef.current.resume();
             }
           } else {

@@ -1,21 +1,49 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import dynamic from "next/dynamic";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 const AuroraCharacter = dynamic(() => import("./AuroraCharacter"), {
   ssr: false,
 });
 
-export default function AboutMe() {
+export interface AboutMeProps {
+  isActive: boolean;
+}
+
+export default function AboutMe({ isActive }: AboutMeProps) {
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(() => {
+    if (isActive) {
+      gsap.to(".about-content", {
+        y: 0,
+        opacity: 1,
+        duration: 1.2,
+        ease: "power3.out",
+        stagger: 0.1,
+        delay: 0.2 // Wait slightly for Hero to exit
+      });
+    } else {
+      gsap.to(".about-content", {
+        y: 100,
+        opacity: 0,
+        duration: 1,
+        ease: "power3.inOut",
+      });
+    }
+  }, { dependencies: [isActive], scope: containerRef });
+
   return (
     <section
+      ref={containerRef}
       id="about"
       style={{
-        background: "var(--color-bg)",
         padding: "80px clamp(32px, 6vw, 96px)",
       }}
-      className="relative w-full min-h-screen overflow-hidden flex items-center"
+      className="relative w-full h-[100vh] overflow-hidden flex items-center"
     >
       {/* Content Container */}
       <div className="relative z-10 w-full max-w-[1200px] mx-auto">
@@ -24,6 +52,7 @@ export default function AboutMe() {
           {/* Left Column — Bio Text */}
           <div className="flex-1 flex flex-col justify-center order-2 md:order-1">
             <p
+              className="about-content opacity-0 translate-y-[100px]"
               style={{
                 fontFamily: "var(--font-primary)",
                 fontWeight: 300,
@@ -55,7 +84,7 @@ export default function AboutMe() {
             </p>
 
             {/* Service Tags */}
-            <div style={{ marginTop: "24px" }}>
+            <div className="about-content opacity-0 translate-y-[100px]" style={{ marginTop: "24px" }}>
               <span
                 style={{
                   fontFamily: "var(--font-primary)",
@@ -74,7 +103,7 @@ export default function AboutMe() {
           </div>
 
           {/* Right Column — Aurora Character */}
-          <div className="flex-1 flex items-center justify-center order-1 md:order-2">
+          <div className="about-content opacity-0 translate-y-[100px] flex-1 flex items-center justify-center order-1 md:order-2">
             <div className="w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] md:w-[420px] md:h-[420px] lg:w-[500px] lg:h-[500px]">
               <AuroraCharacter />
             </div>
@@ -82,18 +111,6 @@ export default function AboutMe() {
 
         </div>
       </div>
-
-      {/* Subtle separator line at the top */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: "clamp(32px, 6vw, 96px)",
-          right: "clamp(32px, 6vw, 96px)",
-          height: "1px",
-          background: "rgba(255, 255, 255, 0.06)",
-        }}
-      />
     </section>
   );
 }

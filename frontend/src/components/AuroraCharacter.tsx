@@ -32,7 +32,7 @@ export default function AuroraCharacter({ className = "" }: AuroraCharacterProps
   const lastBlinkRef = useRef(0);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
-    const dpr = Math.min(window.devicePixelRatio, 2);
+    const dpr = Math.min(window.devicePixelRatio, 1.5);
     const cw = w * dpr;
     const ch = h * dpr;
 
@@ -195,7 +195,7 @@ export default function AuroraCharacter({ className = "" }: AuroraCharacterProps
 
     // Resize handler
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio, 2);
+      const dpr = Math.min(window.devicePixelRatio, 1.5);
       const rect = container.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
