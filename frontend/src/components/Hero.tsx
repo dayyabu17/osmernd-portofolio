@@ -1,280 +1,140 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useState } from "react";
 import dynamic from "next/dynamic";
+import { Menu, X } from "lucide-react";
 
-/* ── Lazy-load heavy WebGL background (client-only) ── */
-const GradientBackground = dynamic(() => import("./GradientBackground"), {
+const TubesBackground = dynamic(() => import("./TubesBackground"), {
   ssr: false,
 });
+import CSSPrismaticBurst from "./CSSPrismaticBurst";
 
-/* ───────────────────────────────────────────
-   Constants
-   ─────────────────────────────────────────── */
-const LENS_RADIUS_SMALL = 50; // half of 100px default lens
-const LENS_RADIUS_LARGE = 100; // half of 200px expanded lens
-
-/* ───────────────────────────────────────────
-   Hero Component
-   ─────────────────────────────────────────── */
 export default function Hero() {
-  /* ── Refs ── */
-  const heroRef = useRef<HTMLDivElement>(null);
-  const lensRef = useRef<HTMLDivElement>(null);
-  const lensContentRef = useRef<HTMLDivElement>(null);
-  const creativeRef = useRef<HTMLSpanElement>(null);
-  const visualRef = useRef<HTMLSpanElement>(null);
-  const designerRef = useRef<HTMLSpanElement>(null);
-  const turbulenceRef = useRef<SVGFETurbulenceElement>(null);
-  const displacementRef = useRef<SVGFEDisplacementMapElement>(null);
-  const redOffsetRef = useRef<SVGFEOffsetElement>(null);
-  const blueOffsetRef = useRef<SVGFEOffsetElement>(null);
-
-  /* ── State (low-frequency changes only) ── */
-  const [isOnPage, setIsOnPage] = useState(false);
-  const [overlappedWord, setOverlappedWord] = useState<string | null>(null);
-
-  /* ── Check if the lens circle overlaps a word ── */
-  const getOverlappedWord = useCallback(
-    (mx: number, my: number): string | null => {
-      const refs = [
-        { word: "Creative", ref: creativeRef },
-        { word: "visual", ref: visualRef },
-        { word: "designer", ref: designerRef },
-      ];
-
-      for (const { word, ref } of refs) {
-        if (!ref.current) continue;
-        const rect = ref.current.getBoundingClientRect();
-        const closestX = Math.max(rect.left, Math.min(mx, rect.right));
-        const closestY = Math.max(rect.top, Math.min(my, rect.bottom));
-        const dx = mx - closestX;
-        const dy = my - closestY;
-        if (Math.sqrt(dx * dx + dy * dy) < LENS_RADIUS_SMALL) {
-          return word;
-        }
-      }
-      return null;
-    },
-    []
-  );
-
-  /* ── Mouse tracking ── */
-  useEffect(() => {
-    let raf = 0;
-    let lastX = 0;
-    let lastY = 0;
-    let lastT = performance.now();
-    let targetX = 0;
-    let targetY = 0;
-    let speed = 0;
-
-    const updateFilter = (t: number) => {
-      const dt = Math.max(8, t - lastT);
-      const dx = targetX - lastX;
-      const dy = targetY - lastY;
-      const dist = Math.hypot(dx, dy);
-      const v = (dist / dt) * 120;
-      speed += (v - speed) * 0.12;
-
-      const spread = Math.min(14, 2 + speed * 0.22);
-      const disp = Math.min(18, 4 + speed * 0.3);
-      const base = 0.008 + 0.0035 * Math.sin(t * 0.0012);
-      const freq = Math.min(0.02, base + speed * 0.0005);
-
-      if (redOffsetRef.current) redOffsetRef.current.setAttribute("dx", `${-spread}`);
-      if (blueOffsetRef.current) blueOffsetRef.current.setAttribute("dx", `${spread}`);
-      if (displacementRef.current) displacementRef.current.setAttribute("scale", `${disp}`);
-      if (turbulenceRef.current)
-        turbulenceRef.current.setAttribute("baseFrequency", `${freq.toFixed(4)}`);
-
-      lastX = targetX;
-      lastY = targetY;
-      lastT = t;
-      raf = requestAnimationFrame(updateFilter);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = e.clientX;
-      const y = e.clientY;
-      setIsOnPage(true);
-      targetX = x;
-      targetY = y;
-
-      // Move lens via ref (no React re-render)
-      if (lensRef.current) {
-        lensRef.current.style.left = `${x}px`;
-        lensRef.current.style.top = `${y}px`;
-      }
-
-      // Align inner content so the duplicate text overlaps the original
-      if (lensContentRef.current) {
-        lensContentRef.current.style.left = `calc(50% - ${x}px)`;
-        lensContentRef.current.style.top = `calc(50% - ${y}px)`;
-        lensContentRef.current.style.transformOrigin = `${x}px ${y}px`;
-      }
-
-      // Word overlap detection (infrequent state change)
-      const word = getOverlappedWord(x, y);
-      setOverlappedWord(word);
-    };
-
-    const handleMouseLeave = () => {
-      setIsOnPage(false);
-      setOverlappedWord(null);
-    };
-
-    raf = requestAnimationFrame(updateFilter);
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    document.addEventListener("mouseleave", handleMouseLeave);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, [getOverlappedWord]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <section className="hero-section" ref={heroRef} id="hero">
-      {/* ── SVG filter: chromatic aberration ── */}
-      <svg
-        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
-        aria-hidden="true"
-      >
-        <defs>
-          <filter
-            id="hero-chromatic"
-            x="-10%"
-            y="-10%"
-            width="120%"
-            height="120%"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.012"
-              numOctaves="2"
-              seed="2"
-              ref={turbulenceRef}
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale="6"
-              xChannelSelector="R"
-              yChannelSelector="G"
-              ref={displacementRef}
-              result="distorted"
-            />
-            {/* Red channel — shifted left */}
-            <feColorMatrix
-              in="distorted"
-              type="matrix"
-              values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
-              result="r"
-            />
-            <feOffset in="r" dx="-4" dy="0" result="r-off" ref={redOffsetRef} />
+    <section className="hero-section" id="hero">
+      
+      {/* ── CSS Prismatic Burst Background (Always visible) ── */}
+      <div className="absolute inset-0 z-0 md:hidden">
+        <CSSPrismaticBurst />
+      </div>
 
-            {/* Green channel — centered */}
-            <feColorMatrix
-              in="distorted"
-              type="matrix"
-              values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
-              result="g"
-            />
-
-            {/* Blue channel — shifted right */}
-            <feColorMatrix
-              in="distorted"
-              type="matrix"
-              values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
-              result="b"
-            />
-            <feOffset in="b" dx="4" dy="0" result="b-off" ref={blueOffsetRef} />
-
-            {/* Recombine with screen blend */}
-            <feBlend in="r-off" in2="g" mode="screen" result="rg" />
-            <feBlend in="rg" in2="b-off" mode="screen" result="rgb" />
-
-            {/* Subtle blur for softness */}
-            <feGaussianBlur in="rgb" stdDeviation="1.2" />
-          </filter>
-        </defs>
-      </svg>
-
-      {/* ── Gradient Background ── */}
-      <div className="prism-bg">
-        <GradientBackground
-          animationType="hover"
-          height={3.2}
-          baseWidth={5.2}
-          scale={3.8}
-          glow={1.1}
-          bloom={1.15}
-          noise={0.55}
-          hueShift={0.0}
-          colorFrequency={1.1}
-          timeScale={0.35}
-          suspendWhenOffscreen={true}
-        />
+      {/* ── Tubes Background (Hidden on mobile) ── */}
+      <div className="hidden md:block absolute inset-0 z-10">
+        <TubesBackground className="w-[100vw] h-[100vh]" />
       </div>
 
       {/* ── Navbar ── */}
-      <nav className="navbar" id="navbar">
-        <div className="navbar__brand">Osmern D</div>
-        <ul className="navbar__links">
+      <nav className="absolute top-0 md:top-6 left-1/2 -translate-x-1/2 max-w-[1400px] w-full flex items-center justify-between px-8 md:px-16 py-8 z-50 pointer-events-none">
+        <div className="font-primary text-sm font-medium tracking-[0.12em] uppercase text-white pointer-events-auto">
+          Osmern D
+        </div>
+
+        {/* Desktop Links */}
+        <ul className="hidden md:flex gap-12 list-none m-0 p-0 pointer-events-auto">
           <li>
-            <a className="navbar__link" href="#projects" id="nav-projects">
-              PROJECT
-            </a>
+            <a className="font-primary text-xs font-medium tracking-[0.14em] uppercase text-white/45 hover:text-white transition-colors cursor-pointer" href="#projects">PROJECT</a>
           </li>
           <li>
-            <a className="navbar__link" href="#socials" id="nav-socials">
-              SOCIALS
-            </a>
+            <a className="font-primary text-xs font-medium tracking-[0.14em] uppercase text-white/45 hover:text-white transition-colors cursor-pointer" href="#socials">SOCIALS</a>
           </li>
           <li>
-            <a className="navbar__link" href="#contacts" id="nav-contacts">
-              CONTACTS
-            </a>
+            <a className="font-primary text-xs font-medium tracking-[0.14em] uppercase text-white/45 hover:text-white transition-colors cursor-pointer" href="#contacts">CONTACTS</a>
           </li>
         </ul>
+
+        {/* Mobile Hamburger Icon */}
+        <button 
+          className="md:hidden text-white p-2 pointer-events-auto z-[110]"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
+        </button>
+
+        {/* Full Screen Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-[100] flex flex-col items-center justify-center pointer-events-auto md:hidden">
+            <div className="flex flex-col items-center gap-12">
+              <a 
+                className="font-primary text-3xl font-medium tracking-[0.14em] uppercase text-white hover:text-[#ff007a] transition-colors cursor-pointer" 
+                href="#projects" 
+                onClick={() => setIsMenuOpen(false)}
+              >
+                PROJECT
+              </a>
+              <a 
+                className="font-primary text-3xl font-medium tracking-[0.14em] uppercase text-white hover:text-[#ff007a] transition-colors cursor-pointer" 
+                href="#socials" 
+                onClick={() => setIsMenuOpen(false)}
+              >
+                SOCIALS
+              </a>
+              <a 
+                className="font-primary text-3xl font-medium tracking-[0.14em] uppercase text-white hover:text-[#ff007a] transition-colors cursor-pointer" 
+                href="#contacts" 
+                onClick={() => setIsMenuOpen(false)}
+              >
+                CONTACTS
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* ── Original headline (visible outside the lens) ── */}
-      <div className="hero-headline" id="hero-headline">
-        <span className="hero-headline__line" ref={creativeRef}>
-          Creative
-        </span>
-        <span
-          className="hero-headline__line hero-headline__line--designer"
-          ref={designerRef}
-        >
-          designer
-        </span>
+      {/* Text Content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+        <div className="relative w-full max-w-[1400px] px-8 md:px-16 mx-auto">
+          
+          {/* Typography Layout */}
+          <div className="relative w-full h-[22vw] md:h-[20vw]">
+            
+            {/* Creative (Left aligned, anchored top left, pushed left to balance visual weight) */}
+            <h1 
+              style={{ fontFamily: 'var(--font-primary)', color: '#ffffff', letterSpacing: '-0.03em' }}
+              className="absolute top-0 left-[2vw] md:left-[4vw] text-[clamp(60px,11vw,180px)] leading-[0.85] font-medium m-0 z-30 pointer-events-none mix-blend-normal"
+            >
+              Creative
+            </h1>
+
+            {/* visual & designer wrapper (Right aligned, pushed inwards slightly) */}
+            <div className="absolute top-[6vw] right-[4vw] md:right-[8vw] flex flex-col items-end z-10 pointer-events-none">
+              
+              {/* visual (tucked tightly above 'ner' in designer) */}
+              <h2 
+                style={{ fontFamily: 'var(--font-accent)', color: '#F1A21B', letterSpacing: '-0.02em' }}
+                className="text-[clamp(65px,11vw,160px)] italic font-medium m-0 z-20 mr-[1vw] md:mr-[3vw] leading-[0.5] mb-[-12vw] md:mb-[-14vw]"
+              >
+                visual
+              </h2>
+              
+              {/* designer (flush right) */}
+              <h1 
+                style={{ fontFamily: 'var(--font-primary)', color: '#ffffff', letterSpacing: '-0.03em' }}
+                className="text-[clamp(60px,11vw,180px)] leading-[0.85] font-medium m-0 z-10"
+              >
+                designer
+              </h1>
+              
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      {/* ── Accent word ── */}
-      <div className="hero-accent" id="hero-accent">
-        <span className="hero-accent__word" ref={visualRef}>
-          visual
-        </span>
-      </div>
-
-      {/* ── Bottom info ── */}
-      <div className="hero-bottom" id="hero-bottom">
-        <div className="hero-info">
-          <div className="hero-info__item">
+      {/* ── Bottom info (Always visible) ── */}
+      <div className="absolute bottom-10 left-6 right-6 md:left-14 md:right-14 flex justify-between items-end z-10 pointer-events-none">
+        <div className="flex gap-4 md:gap-16">
+          <div className="font-primary text-[10px] md:text-[11px] font-medium tracking-[0.1em] uppercase text-white/45 leading-[1.5]">
             WEB &amp; MOBILE / UX&amp;UI
             <br />/ BRANDING
           </div>
-          <div className="hero-info__item">
+          <div className="font-primary text-[10px] md:text-[11px] font-medium tracking-[0.1em] uppercase text-white/45 leading-[1.5]">
             BASED
             <br />
             IN NIGERIA
           </div>
-          <div className="hero-info__item">
+          <div className="font-primary text-[10px] md:text-[11px] font-medium tracking-[0.1em] uppercase text-white/45 leading-[1.5] hidden lg:block">
             CURRENTLY AVAILABLE
             <br />
             FOR FREELANCE
@@ -283,36 +143,8 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hero-arrow" id="hero-arrow">
-          <div className="hero-arrow__line" />
-          <span className="hero-arrow__icon">↓</span>
-        </div>
-      </div>
-
-      {/* ── Cursor Lens ──
-           The lens is a circular viewport (overflow: hidden + border-radius).
-           backdrop-filter blurs the background behind it.
-           Inside: a full-viewport duplicate of the hero text, positioned
-           to align perfectly with the original, with chromatic aberration
-           SVG filter + scale magnification. ── */}
-      <div
-        className={`cursor-lens ${!isOnPage ? "cursor-lens--hidden" : ""} ${
-          overlappedWord ? "cursor-lens--expanded" : ""
-        }`}
-        ref={lensRef}
-        aria-hidden="true"
-      >
-        <div className="lens-content" ref={lensContentRef}>
-          {/* Duplicate hero text — uses same CSS classes for identical positioning */}
-          <div className="hero-headline">
-            <span className="hero-headline__line">Creative</span>
-            <span className="hero-headline__line hero-headline__line--designer">
-              designer
-            </span>
-          </div>
-          <div className="hero-accent">
-            <span className="hero-accent__word">visual</span>
-          </div>
+        <div className="hidden sm:flex flex-col items-center animate-bounce text-white/45">
+          <span className="text-xl">↓</span>
         </div>
       </div>
     </section>
