@@ -71,10 +71,10 @@ export default function Hero({ isActive }: HeroProps) {
   }, { dependencies: [isActive], scope: containerRef });
 
   return (
-    <section ref={containerRef} className="hero-section relative w-full h-[100vh]" id="hero" style={{ perspective: "1000px" }}>
+    <section ref={containerRef} className="hero-section relative w-full h-[100vh]" id="hero">
       
       {/* ── Tubes Background (Animated by GSAP) ── */}
-      <div className="hero-tubes hidden md:block absolute inset-0 z-10" style={{ mixBlendMode: "screen" }}>
+      <div className="hero-tubes hidden md:block absolute inset-0 z-10">
         <TubesBackground className="w-[100vw] h-[100vh]" isActive={isActive} />
       </div>
 
@@ -133,7 +133,7 @@ export default function Hero({ isActive }: HeroProps) {
       </nav>
 
       {/* Text Content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10" style={{ transformStyle: "preserve-3d" }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10" style={{ transformStyle: "preserve-3d", perspective: "1000px" }}>
         <div className="relative w-full max-w-[1400px] px-8 md:px-16 mx-auto" style={{ transformStyle: "preserve-3d" }}>
           
           {/* Typography Layout */}

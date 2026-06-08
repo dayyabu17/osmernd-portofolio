@@ -81,7 +81,10 @@ export default function Home() {
         <NoisyGradientBackground ref={bgRef} className="absolute inset-0 z-0 pointer-events-none" />
         
         {/* Hero Section */}
-        <div className={`absolute inset-0 transition-all duration-1000 ${activeSection === 'hero' ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        <div 
+          className={`absolute inset-0 transition-all duration-1000 ${activeSection === 'hero' ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          style={{ mixBlendMode: 'screen' }}
+        >
           <Hero isActive={activeSection === "hero"} />
         </div>
 

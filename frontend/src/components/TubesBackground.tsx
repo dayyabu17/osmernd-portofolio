@@ -72,6 +72,11 @@ export function TubesBackground({
         // Reduce Pixel Ratio
         if (app && app.renderer) {
           app.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+          app.renderer.setClearColor(0x000000, 0); // Set renderer to transparent
+        }
+
+        if (app && app.scene) {
+          app.scene.background = null; // Remove solid background from scene
         }
 
         // Pause rendering when tab is hidden
